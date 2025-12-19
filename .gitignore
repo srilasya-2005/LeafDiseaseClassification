@@ -1,0 +1,4 @@
+plant_dataset/
+*.keras
+*.h5
+class_indices.json
