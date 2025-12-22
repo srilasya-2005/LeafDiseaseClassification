@@ -22,7 +22,7 @@ wheels/
 *.egg
 
 # TensorFlow/Keras
-*.keras
+# *.keras  <-- Commented out to allow the trained model
 *.h5
 checkpoint/
 
