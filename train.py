@@ -1,22 +1,23 @@
 
 import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0' # Disable OneDNN to prevent MKL crashes
 import tensorflow as tf
-from tensorflow.keras.applications import EfficientNetV2M
-from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
+# Mixed Precision disabled for CPU
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, GlobalAveragePooling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from tensorflow.keras.applications.efficientnet_v2 import preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import json
 
 # =======================
 # CONFIGURATION
 # =======================
 IMG_SIZE = 224
-BATCH_SIZE = 8 # Reduced batch size for V2M (Larger model = more VRAM)
-EPOCHS = 60 # Extended training
+BATCH_SIZE = 32 # Higher batch size for MobileNetV2 on CPU
+EPOCHS = 40 # Fast model allows more epochs
 LEARNING_RATE = 1e-4
 
 BASE_DIR = "plant_dataset"
@@ -30,17 +31,20 @@ def build_model(num_classes):
     """
     # pooling='avg' includes GlobalAveragePooling inside the model 
     # This prevents the shape mismatch error we saw earlier
-    base_model = EfficientNetV2M(
+    base_model = MobileNetV2(
         weights="imagenet",
         include_top=False,
-        input_shape=(IMG_SIZE, IMG_SIZE, 3),
-        pooling='avg' 
+        input_shape=(IMG_SIZE, IMG_SIZE, 3)
     )
+    # MobileNetV2 output needs pooling
+    x = base_model.output
+    x = GlobalAveragePooling2D()(x)
     
     # Freeze base model initially
     base_model.trainable = False
     
-    x = base_model.output
+    # Resuming from pooled x
+
     x = BatchNormalization()(x)
     x = Dropout(0.1)(x) # Low dropout to allow high accuracy
     outputs = Dense(num_classes, activation="softmax")(x)
@@ -92,6 +96,7 @@ def train():
 
     num_classes = train_generator.num_classes
     print(f"🔍 Found {num_classes} classes.")
+    print(f"🔍 Class Indices: {train_generator.class_indices}")
     
     # =======================
     # BUILD MODEL
@@ -106,7 +111,7 @@ def train():
     )
     
     print("\n" + "="*50)
-    print(f"MODEL ARCHITECTURE: EfficientNetV2M (Medium)")
+    print(f"MODEL ARCHITECTURE: MobileNetV2 (Lightweight)")
     print(f"TARGET: 90% Accuracy")
     print("="*50)
     model.summary()
@@ -159,7 +164,7 @@ def train():
     # PHASE 2: DEEP FINE-TUNING
     # =======================
     print("\n" + "="*50)
-    print("🔓 PHASE 2: Unfreezing EfficientNetV2M")
+    print("🔓 PHASE 2: Unfreezing MobileNetV2")
     print("="*50)
     
     model.trainable = True

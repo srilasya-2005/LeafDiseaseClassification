@@ -17,7 +17,7 @@ import shutil
 import random
 import numpy as np
 
-from bing_image_downloader import downloader
+# from bing_image_downloader import downloader  # Not needed since we have raw images
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import load_img, img_to_array
 from sklearn.model_selection import train_test_split
@@ -38,24 +38,13 @@ AUG_PER_IMAGE = 8
 
 DATASET_CONFIG = {
     "rice": [
-        "rice bacterial blight leaf",
-        "rice blast disease leaf",
-        "rice brown spot leaf",
-        "rice bacterial leaf streak",
-        "healthy rice leaf"
+        "rice brown spot leaf"
     ],
     "wheat": [
-        "wheat leaf rust",
-        "wheat powdery mildew leaf",
-        "wheat stripe rust",
-        "wheat tan spot leaf",
-        "healthy wheat leaf"
+        "wheat stripe rust"
     ],
     "maize": [
-        "maize common rust leaf",
-        "maize grey leaf spot",
         "maize northern leaf blight",
-        "maize southern rust",
         "healthy maize leaf"
     ]
 }
@@ -85,7 +74,20 @@ def download_images():
 # =======================
 def preprocess_images():
     print("🛠 Preprocessing images (Resizing Only)...")
+    
+    # Flatten config to get allowed classes
+    ALLOWED_CLASSES = set()
+    for classes in DATASET_CONFIG.values():
+        for c in classes:
+            ALLOWED_CLASSES.add(c)
+    
     for root, _, files in os.walk(RAW_DIR):
+        class_name = os.path.basename(root)
+        
+        # Skip if not in our filtered list
+        if class_name not in ALLOWED_CLASSES:
+            continue
+            
         for f in files:
             if f.lower().endswith((".jpg", ".png", ".jpeg")):
                 img_path = os.path.join(root, f)

@@ -1,4 +1,42 @@
-plant_dataset/
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# TensorFlow/Keras
 *.keras
 *.h5
-class_indices.json
+checkpoint/
+
+# Data
+plant_dataset/
+*.zip
+*.tar.gz
+
+# Local environmental variables
+.env
+.venv
+venv/
+ENV/
+
+# OS generated files
+.DS_Store
+Thumbs.db
